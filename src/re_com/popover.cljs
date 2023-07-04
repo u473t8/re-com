@@ -318,7 +318,9 @@
                                       (reset! p-width    (if popover-elem (next-even-integer (.-clientWidth  popover-elem)) 0)) ;; next-even-integer required to avoid wiggling popovers (width/height appears to prefer being even and toggles without this call)
                                       (reset! p-height   (if popover-elem (next-even-integer (.-clientHeight popover-elem)) 0))
                                       (reset! pop-offset (calc-pop-offset arrow-pos position-offset @p-width @p-height))
-                                      [orientation grey-arrow?]))]
+                                      [orientation grey-arrow?]))
+          node-ref               (atom nil)
+          ref-fn                 (fn [el] (reset! node-ref el))]
       (reagent/create-class
         {:display-name "popover-border"
 
@@ -328,7 +330,7 @@
 
          :component-did-update
          (fn [this]
-           (let [pop-border-node (rdom/dom-node this)
+           (let [pop-border-node @node-ref
                  clipped?        (popover-clipping pop-border-node)
                  anchor-node     (-> pop-border-node .-parentNode .-parentNode .-parentNode)] ;; Get reference to rc-point-wrapper node
              (when (and clipped? (not @found-optimal))
@@ -381,7 +383,7 @@
                                   :max-width "none"
                                   :padding   "0px"}
                                  style)}
-                  (->attr args)
+                  (->attr args ref-fn)
                   attr)
                 [popover-arrow orientation @pop-offset arrow-length arrow-width grey-arrow? tooltip-style? popover-color popover-border-color parts]
                 (when title title)
