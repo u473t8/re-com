@@ -12,8 +12,7 @@
     [clojure.string  :as    string]
     [reagent.core    :as    reagent]
     [goog.string     :as    gstring]
-    [goog.string.format]
-    [reagent.dom     :as    rdom]))
+    [goog.string.format]))
 
 ;;  Inspiration: http://alxlit.name/bootstrap-chosen
 ;;  Alternative: http://silviomoreto.github.io/bootstrap-select
