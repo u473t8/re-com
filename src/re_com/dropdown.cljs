@@ -176,33 +176,39 @@
     ^{:key (str id)} [choice-item id markup callback internal-model]))
 
 
-(defn- filter-text-box-base
-  "Base function (before lifecycle metadata) to render a filter text box"
-  [filter-box? filter-text key-handler drop-showing? set-filter-text filter-placeholder]
-  [:div.chosen-search
-   [:input
-    {:type          "text"
-     :auto-complete "off"
-     :style         (when-not filter-box? {:position "absolute" ;; When no filter box required, use it but hide it off screen
-                                           :width    "0px"      ;; The rest of these styles make the textbox invisible
-                                           :padding  "0px"
-                                           :border   "none"})
-     :value         @filter-text
-     :placeholder   filter-placeholder
-     :on-change     (handler-fn (set-filter-text (-> event .-target .-value)))
-     :on-key-down   (handler-fn (when-not (key-handler event)
-                                  (.stopPropagation event)
-                                  (.preventDefault event))) ;; When key-handler returns false, preventDefault
-     :on-blur       (handler-fn (reset! drop-showing? false))}]])
-
-
-(def ^:private filter-text-box
+(defn- filter-text-box
   "Render a filter text box"
-  (with-meta filter-text-box-base
-             {:component-did-mount #(let [node (.-firstChild (rdom/dom-node %))]
-                                     (.focus node))
-              :component-did-update #(let [node (.-firstChild (rdom/dom-node %))]
-                                      (.focus node))}))
+  [filter-box? filter-text key-handler drop-showing? set-filter-text filter-placeholder]
+  (let [node-ref (atom nil)
+        ref-fn   (fn [el]
+                   (reset! node-ref el))]
+    (reagent/create-class
+      {:component-did-mount (fn [_]
+                              (let [node (.-firstChild @node-ref)]
+                                (.focus node)))
+       :component-did-update (fn [_]
+                               (let [node (.-firstChild @node-ref)]
+                                 (.focus node)))
+       :reagent-render
+       (fn
+         [filter-box? filter-text key-handler drop-showing? set-filter-text filter-placeholder]
+         [:div.chosen-search
+          {:ref ref-fn}
+          [:input
+           {:type          "text"
+            :auto-complete "off"
+            :style         (when-not filter-box? {:position "absolute" ;; When no filter box required, use it but hide it off screen
+                                                  :width    "0px" ;; The rest of these styles make the textbox invisible
+                                                  :padding  "0px"
+                                                  :border   "none"})
+            :value         @filter-text
+            :placeholder   filter-placeholder
+            :on-change     (handler-fn (set-filter-text (-> event .-target .-value)))
+            :on-key-down   (handler-fn (when-not (key-handler event)
+                                         (.stopPropagation event)
+                                         (.preventDefault event))) ;; When key-handler returns false, preventDefault
+            :on-blur       (handler-fn (reset! drop-showing? false))}]])})))
+
 
 (defn- dropdown-top
   "Render the top part of the dropdown, with the clickable area and the up/down arrow"
