@@ -34,33 +34,37 @@
     args))
 
 (defn ->attr
-  [{:keys [src debug-as] :as args}]
-  (if-not debug? ;; This is in a separate `if` so Google Closure dead code elimination can run...
-    {}
-    (let [rc-component        (or (:component debug-as)
-                                  (short-component-name (component/component-name (r/current-component))))
-          rc-args             (loggable-args
+  ([args]
+   (->attr args nil))
+  ([{:keys [src debug-as] :as args} ref-fn]
+   (if-not debug? ;; This is in a separate `if` so Google Closure dead code elimination can run...
+     {}
+     (let [rc-component        (or (:component debug-as)
+                                   (short-component-name (component/component-name (r/current-component))))
+           rc-args             (loggable-args
                                 (or (:args debug-as)
                                     args))
-          ref-fn              (fn [^js/Element el]
-                                ;; If the ref callback is defined as an inline function, it will get called twice during updates,
-                                ;; first with null and then again with the DOM element.
-                                ;;
-                                ;; See: 'Caveats with callback refs' at
-                                ;; https://reactjs.org/docs/refs-and-the-dom.html#caveats-with-callback-refs
-                                (when el
-                                  ;; Remember args so they can be logged later:
-                                  (gobj/set el "__rc-args" rc-args))
-                                ;; User may have supplied their own ref like so: {:attr {:ref (fn ...)}}
-                                (when-let [user-ref-fn (get-in args [:attr :ref])]
-                                  (when (fn? user-ref-fn)
-                                    (user-ref-fn el))))
-          {:keys [file line]} src]
-      (cond->
-        {:ref     ref-fn
-         :data-rc rc-component}
-        src
-        (assoc :data-rc-src (str file ":" line))))))
+           ref-fn              (fn [^js/Element el]
+                                 ;; If the ref callback is defined as an inline function, it will get called twice during updates,
+                                 ;; first with null and then again with the DOM element.
+                                 ;;
+                                 ;; See: 'Caveats with callback refs' at
+                                 ;; https://reactjs.org/docs/refs-and-the-dom.html#caveats-with-callback-refs
+                                 (when el
+                                   ;; Remember args so they can be logged later:
+                                   (gobj/set el "__rc-args" rc-args))
+                                 (when ref-fn
+                                   (ref-fn el))
+                                 ;; User may have supplied their own ref like so: {:attr {:ref (fn ...)}}
+                                 (when-let [user-ref-fn (get-in args [:attr :ref])]
+                                   (when (fn? user-ref-fn)
+                                     (user-ref-fn el))))
+           {:keys [file line]} src]
+       (cond->
+           {:ref     ref-fn
+            :data-rc rc-component}
+           src
+           (assoc :data-rc-src (str file ":" line)))))))
 
 (defn component-stack
   ([el]
