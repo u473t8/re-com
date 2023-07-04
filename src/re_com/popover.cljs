@@ -12,7 +12,6 @@
                                  string-or-hiccup? string-or-atom? vector-of-maps? css-style? html-attr? parts?]]
     [clojure.string      :as    string]
     [reagent.core        :as    reagent]
-    [reagent.dom         :as    rdom]
     [reagent.ratom       :refer-macros [reaction]]))
 
 
