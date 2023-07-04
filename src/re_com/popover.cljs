@@ -442,10 +442,13 @@
     (validate-args-macro popover-content-wrapper-args-desc args)
     (let [left-offset              (reagent/atom 0)
           top-offset               (reagent/atom 0)
+          node-ref                 (atom nil)
+          ref-fn                   (fn [el]
+                                     (reset! node-ref el))
           position-no-clip-popover (fn position-no-clip-popover
-                                     [this]
+                                     [_]
                                      (when no-clip?
-                                       (let [node               (rdom/dom-node this)
+                                       (let [node               @node-ref
                                              popover-point-node (.-parentNode node)                           ;; Get reference to rc-popover-point node
                                              bounding-rect      (.getBoundingClientRect popover-point-node)]  ;; The modern magical way of getting offsetLeft and offsetTop. Returns this: https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIDOMClientRect
                                          (reset! left-offset (.-left bounding-rect))
@@ -479,7 +482,7 @@
                                                       :left      (px @left-offset)
                                                       :top       (px @top-offset)})
                                       style)}
-                       (->attr args)
+                       (->attr args ref-fn)
                        attr)
                 (when (and (deref-or-value showing-injected?)  on-cancel)
                   [backdrop
