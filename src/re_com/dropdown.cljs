@@ -132,17 +132,20 @@
 (defn- choice-item
   "Render a choice item and set up appropriate mouse events"
   [id label on-click internal-model]
-  (let [mouse-over? (reagent/atom false)]
+  (let [mouse-over? (reagent/atom false)
+        node-ref    (atom false)
+        ref-fn      (fn [el]
+                      (reset! node-ref el))]
     (reagent/create-class
       {:component-did-mount
-       (fn [this]
-         (let [node (rdom/dom-node this)
+       (fn [_]
+         (let [node     @node-ref
                selected (= @internal-model id)]
            (when selected (show-selected-item node))))
 
        :component-did-update
-       (fn [this]
-         (let [node (rdom/dom-node this)
+       (fn [_]
+         (let [node     @node-ref
                selected (= @internal-model id)]
            (when selected (show-selected-item node))))
 
@@ -157,6 +160,7 @@
                        (when @mouse-over? "mouseover"))]
            [:li
             {:class         (str "active-result group-option " class)
+             :ref           ref-fn
              :on-mouse-over (handler-fn (reset! mouse-over? true))
              :on-mouse-out  (handler-fn (reset! mouse-over? false))
              :on-mouse-down (handler-fn
